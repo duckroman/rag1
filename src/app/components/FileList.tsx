@@ -6,7 +6,7 @@ import { Description, PictureAsPdf, Image, Delete } from '@mui/icons-material';
 export interface AppFile {
   id: string;
   name: string;
-  type: 'pdf' | 'txt' | 'docx' | 'jpg' | 'png';
+  type: 'pdf' | 'txt' | 'docx' | 'jpg' | 'png' | 'unknown';
 }
 
 interface FileListProps {

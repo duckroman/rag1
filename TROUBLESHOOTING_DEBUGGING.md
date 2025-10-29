@@ -96,6 +96,34 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 This approach uses `unpkg.com` to fetch the worker file that corresponds to the `pdfjs.version` currently being used by `react-pdf`, effectively resolving version mismatch issues. This also removes the need to manually manage the `pdf.worker.min.mjs` file in your `public` directory.
 
+### 1.6. Type Mismatch for AppFile Interface
+
+**Error Message:**
+```
+Type error: Type 'import("/var/www/rag1/src/app/page").AppFile[]' is not assignable to type 'import("/var/www/rag1/src/app/components/FileList").AppFile[]'.
+  Type 'import("/var/www/rag1/src/app/page").AppFile' is not assignable to type 'import("/var/www/rag1/src/app/components/FileList").AppFile'.
+    Types of property 'type' are incompatible.
+      Type '"pdf" | "txt" | "docx" | "jpg" | "png" | "unknown"' is not assignable to type '"pdf" | "txt" | "docx" | "jpg" | "png"'.
+        Type '"unknown"' is not assignable to type '"pdf" | "txt" | "docx" | "jpg" | "png"'.
+```
+
+**Cause:**
+This error occurs when the `AppFile` interface is defined inconsistently across different files. Specifically, the `type` property of the `AppFile` interface in one file (e.g., `src/app/page.tsx`) includes a type (e.g., `"unknown"`) that is not present in the `type` property of the `AppFile` interface in another file (e.g., `src/app/components/FileList.tsx`). TypeScript's strict type checking flags this as an incompatibility.
+
+**Solution:**
+Ensure that the `AppFile` interface is consistently defined across all files that use it. If a new type is introduced in one definition, it must be added to all other definitions of `AppFile` where it might be used.
+
+**Example Fix (in `src/app/components/FileList.tsx`):**
+```typescript
+export interface AppFile {
+  id: string;
+  name: string;
+  type: 'pdf' | 'txt' | 'docx' | 'jpg' | 'png' | 'unknown'; // Add 'unknown' type
+}
+```
+
+This ensures that the `AppFile` interface has a unified definition, resolving the type mismatch error.
+
 ## 2. Debugging Techniques
 
 ### 2.1. Browser Developer Tools
