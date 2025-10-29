@@ -9,8 +9,8 @@ const GOOGLE_DOCS_MIME_TYPES = {
 };
 
 // GET handler for fetching file content for preview
-export async function GET(request: NextRequest, context: { params: { fileId: string } }) {
-  const { fileId } = context.params;
+export async function GET(request: NextRequest, context: { params: Promise<{ fileId: string }> }) {
+  const { fileId } = await context.params;
 
   if (!fileId) {
     return NextResponse.json({ error: 'File ID is required' }, { status: 400 });
@@ -78,8 +78,8 @@ export async function GET(request: NextRequest, context: { params: { fileId: str
 }
 
 // DELETE handler for deleting a file
-export async function DELETE(request: NextRequest, context: { params: { fileId: string } }) {
-  const { fileId } = context.params;
+export async function DELETE(request: NextRequest, context: { params: Promise<{ fileId: string }> }) {
+  const { fileId } = await context.params;
 
   if (!fileId) {
     return NextResponse.json({ error: 'File ID is required' }, { status: 400 });
