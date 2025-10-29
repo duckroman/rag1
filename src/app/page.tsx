@@ -1,77 +1,96 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Box, Container, Typography, Alert, CircularProgress, Paper, IconButton, Collapse } from '@mui/material';
-import dynamic from 'next/dynamic';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import FileDropzone from './components/FileDropzone';
-import FileList, { AppFile } from './components/FileList';
-import Chat from './components/Chat';
 
-const FilePreview = dynamic(() => import('./components/FilePreview'), {
-  ssr: false,
-  loading: () => <CircularProgress />,
-});
+import { useState, useCallback, useEffect } from 'react';
+import { Container, Grid, Paper, Typography, Box, IconButton, Collapse, CircularProgress, Alert } from '@mui/material';
+import ChatIcon from '@mui/icons-material/Chat';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import CloseIcon from '@mui/icons-material/Close';
+import dynamic from 'next/dynamic';
+
+export interface AppFile {
+  id: string;
+  name: string;
+  type: 'pdf' | 'txt' | 'docx' | 'jpg' | 'png' | 'unknown';
+}
+
+// Dynamically import components to avoid SSR issues with client-side libraries
+const FileDropzone = dynamic(() => import('./components/FileDropzone'), { ssr: false });
+const FileList = dynamic(() => import('./components/FileList'), { ssr: false });
+const FilePreview = dynamic(() => import('./components/FilePreview'), { ssr: false });
+const Chat = dynamic(() => import('./components/Chat'), { ssr: false });
+
 
 export default function Home() {
   const [files, setFiles] = useState<AppFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<AppFile | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [isFileSectionExpanded, setIsFileSectionExpanded] = useState(true);
-  const [isPreviewSectionExpanded, setIsPreviewSectionExpanded] = useState(true);
-  const [visitsCount, setVisitsCount] = useState(0); // Initialize to 0, will be updated from localStorage
+  const [isChatSectionExpanded, setIsChatSectionExpanded] = useState(true);
 
-  useEffect(() => {
-    // Increment visit count using localStorage
-    if (typeof window !== 'undefined') {
-      const currentVisits = parseInt(localStorage.getItem('visitsCount') || '0', 10);
-      const newVisits = currentVisits + 1;
-      localStorage.setItem('visitsCount', newVisits.toString());
-      setVisitsCount(newVisits);
-    }
-  }, []); // Run only once on mount
-
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
+    setLoadingFiles(true);
     try {
-      setLoadingFiles(true);
       const response = await fetch('/api/files');
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'Error al cargar los archivos.');
+        throw new Error('Failed to fetch files');
       }
       const data = await response.json();
-      setFiles(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
+      setFiles(data.files);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoadingFiles(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [fetchFiles]);
 
-  const handleDelete = async (fileId: string) => {
-    const originalFiles = [...files];
-    setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
-    if (selectedFile && selectedFile.id === fileId) {
-      setSelectedFile(null);
-    }
+  const handleDrop = useCallback(async (acceptedFiles: File[]) => {
+    setIsUploading(true);
+    setError(null);
+    const formData = new FormData();
+    acceptedFiles.forEach(file => {
+      formData.append('files', file);
+    });
 
     try {
-      const response = await fetch(`/api/files/${fileId}`, {
-        method: 'DELETE',
+      const response = await fetch('/api/files', {
+        method: 'POST',
+        body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'No se pudo borrar el archivo.');
+        throw new Error(errorData.error || 'File upload failed');
       }
-    } catch (err) {
-      setFiles(originalFiles);
-      setError(err instanceof Error ? err.message : 'Ocurrió un error al borrar');
+
+      await fetchFiles(); // Refresh file list
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  }, [fetchFiles]);
+
+  const handleDelete = async (fileId: string) => {
+    try {
+      const response = await fetch(`/api/files/${fileId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete file');
+      }
+      setFiles(files => files.filter(f => f.id !== fileId));
+      if (selectedFile?.id === fileId) {
+        setSelectedFile(null);
+      }
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
@@ -80,81 +99,51 @@ export default function Home() {
   };
 
   return (
-    <>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, pb: '300px' }}> {/* Added padding-bottom to prevent overlap with fixed chat */}
-        <Box sx={{ textAlign: 'center', mb: 5 }}>
-          <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Chatea Con Tus Documentos
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Una nueva forma de interactuar con tu información.
-          </Typography>
-          <Typography variant="caption" color="text.disabled" sx={{ mt: 1 }}>
-            Visitas: {visitsCount}
-          </Typography>
-        </Box>
-
-        {error && <Alert severity="error" sx={{ mb: 2, position: 'fixed', top: 20, right: 20, zIndex: 9999 }} onClose={() => setError(null)}>{error}</Alert>}
-
-        <Paper elevation={3} sx={{ p: 4, mb: 5, borderRadius: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 500, mb: 0 }}>
-              Mis Archivos
-            </Typography>
-            <IconButton onClick={() => setIsFileSectionExpanded(!isFileSectionExpanded)} size="small">
-              {isFileSectionExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
-          </Box>
-          <Collapse in={isFileSectionExpanded}>
-            <FileDropzone />
-            {loadingFiles ? <CircularProgress sx={{ mt: 4 }} /> : <FileList files={files} onDelete={handleDelete} onSelect={handleSelect} selectedFileId={selectedFile?.id || null} />}
-          </Collapse>
-        </Paper>
-
-        {selectedFile && (
-          <Paper elevation={3} sx={{ p: 4, borderRadius: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 500, mb: 0 }}>
-                Vista Previa: {selectedFile.name}
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      <Grid container spacing={3} sx={{ height: 'calc(100vh - 100px)' }}>
+        {/* Files & Preview Section */}
+        <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography component="h2" variant="h6" color="primary" gutterBottom>
+                Mis Documentos
               </Typography>
-              <IconButton onClick={() => setIsPreviewSectionExpanded(!isPreviewSectionExpanded)} size="small">
-                {isPreviewSectionExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              <IconButton onClick={() => setIsFileSectionExpanded(!isFileSectionExpanded)}>
+                {isFileSectionExpanded ? <CloseIcon /> : <UploadFileIcon />}
               </IconButton>
             </Box>
-            <Collapse in={isPreviewSectionExpanded}>
-              <Box sx={{ height: '70vh' }}>
-                <FilePreview file={selectedFile} />
-              </Box>
+            <Collapse in={isFileSectionExpanded}>
+              <FileDropzone onDrop={handleDrop} isUploading={isUploading} />
+              {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+              {loadingFiles ? <CircularProgress sx={{ mt: 4, mx: 'auto' }} /> : <FileList files={files} onDelete={handleDelete} onSelect={handleSelect} selectedFileId={selectedFile?.id || null} />}
             </Collapse>
           </Paper>
-        )}
-      </Container>
+        </Grid>
 
-      {/* Always visible and fixed Chat component */}
-      <Container maxWidth="lg" sx={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1300,
-        display: 'flex',
-        justifyContent: 'center',
-        pointerEvents: 'none', // Allows interaction with elements behind it
-      }}>
-        <Paper elevation={8} sx={{
-          width: '100%', // Take full width of the container
-          height: 300, // Fixed height for the chat section
-          borderRadius: '16px 16px 0 0', // Rounded top corners
-          display: 'flex',
-          flexDirection: 'column',
-          pointerEvents: 'auto', // Re-enable interaction for the chat itself
-        }}>
-          {/* The chat title and message count are now handled within the Chat component */}
-          <Box sx={{ flexGrow: 1, height: '100%', overflow: 'hidden' }}>
-            <Chat />
-          </Box>
-        </Paper>
-      </Container>
-    </>
+        {/* Chat & Preview Section */}
+        <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Grid container spacing={3} direction="column" sx={{ flexGrow: 1 }}>
+            <Grid item xs>
+              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography component="h2" variant="h6" color="primary" gutterBottom>
+                    Chat
+                  </Typography>
+                  <IconButton onClick={() => setIsChatSectionExpanded(!isChatSectionExpanded)}>
+                    {isChatSectionExpanded ? <CloseIcon /> : <ChatIcon />}
+                  </IconButton>
+                </Box>
+                <Collapse in={isChatSectionExpanded} sx={{ flexGrow: 1, display: 'flex' }}>
+                  <Chat />
+                </Collapse>
+              </Paper>
+            </Grid>
+            <Grid item xs>
+              <FilePreview file={selectedFile} />
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Container>
   );
 }
