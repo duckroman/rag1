@@ -6,7 +6,7 @@ import ThemeRegistry from './ThemeRegistry'; // Assuming this is the correct pat
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Chat With Your Documents",
+  title: "Chatea con tus documentos",
   description: "Upload documents and chat with them.",
   icons: [{
     rel: 'icon',
