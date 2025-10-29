@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGoogleDriveClient } from '@/lib/google-drive';
+import { getGoogleDriveClient } from '../../../lib/google-drive';
 
 const GOOGLE_DOCS_MIME_TYPES = {
   DOCUMENT: 'application/vnd.google-apps.document',

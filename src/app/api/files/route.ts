@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getGoogleDriveClient } from '@/lib/google-drive';
+import { getGoogleDriveClient } from '../../../lib/google-drive';
 import { Readable } from 'stream';
 
 // Helper to map Google Drive file to our AppFile format
