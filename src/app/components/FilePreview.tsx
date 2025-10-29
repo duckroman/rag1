@@ -9,7 +9,7 @@ import type { AppFile } from '../page';
 
 // Configure the PDF.js worker. This is the crucial step.
 // It points to the worker file that should be in your public directory.
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface FilePreviewProps {
   file: AppFile | null;
@@ -20,10 +20,10 @@ const FilePreview = ({ file }: FilePreviewProps) => {
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
+    console.log('Document loaded successfully. Number of pages:', numPages);
   }
 
-  if (!file) {
-    return (
+  if (!file) {    return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', border: '1px dashed grey', borderRadius: 1, p: 2 }}>
         <Typography>Selecciona un archivo para previsualizarlo</Typography>
       </Box>
@@ -37,7 +37,10 @@ const FilePreview = ({ file }: FilePreviewProps) => {
       <Document
         file={fileUrl}
         onLoadSuccess={onDocumentLoadSuccess}
-        onLoadError={(error) => console.error('Error loading document:', error.message)}
+        onLoadError={(error) => {
+          console.error('Error loading document:', error.message);
+          alert(`Error al cargar el documento: ${error.message}`); // Provide user feedback
+        }}
         loading={<CircularProgress />}
         error={<Alert severity="error">No se pudo cargar la previsualización del PDF.</Alert>}
       >

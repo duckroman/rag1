@@ -97,6 +97,28 @@ export async function POST(request: Request) {
         fields: 'id, name, mimeType',
       });
       uploadedFiles.push(response.data);
+
+      // N8N Webhook
+      if (process.env.N8N_WEBHOOK_DRIVE_URL) {
+        try {
+          await fetch(process.env.N8N_WEBHOOK_DRIVE_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              event: 'file-uploaded',
+              file: {
+                id: response.data.id,
+                name: response.data.name,
+              },
+            }),
+          });
+        } catch (webhookError) {
+          console.error('Failed to send webhook for file upload:', webhookError);
+          // Non-blocking error
+        }
+      }
     }
 
     return NextResponse.json({ success: true, uploadedFiles });

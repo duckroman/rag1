@@ -113,6 +113,35 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
 
   try {
     const drive = getGoogleDriveClient();
+
+    // N8N Webhook
+    if (process.env.N8N_WEBHOOK_DRIVE_URL) {
+      try {
+        // First, get the file details to include in the webhook payload
+        const fileDetails = await drive.files.get({
+          fileId: fileId,
+          fields: 'id, name', // Specify which fields to retrieve
+        });
+
+        await fetch(process.env.N8N_WEBHOOK_DRIVE_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            event: 'file-deleted',
+            file: {
+              id: fileDetails.data.id,
+              name: fileDetails.data.name,
+            },
+          }),
+        });
+      } catch (webhookError) {
+        console.error('Failed to send webhook for file deletion:', webhookError);
+        // Non-blocking error
+      }
+    }
+
     await drive.files.delete({ fileId });
     return new NextResponse(null, { status: 204 }); // 204 No Content on success
   } catch (error: any) {
