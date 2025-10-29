@@ -93,12 +93,15 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
   } catch (error: any) {
     console.error('Failed to fetch file from Google Drive:', error);
     const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error';
+    const errorStatus = error.response?.status || 500;
     return NextResponse.json(
       { 
         error: 'Failed to fetch file from Google Drive', 
-        details: errorMessage
+        details: errorMessage,
+        status: errorStatus,
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)) // Stringify the full error object
       }, 
-      { status: error.response?.status || 500 }
+      { status: errorStatus }
     );
   }
 }

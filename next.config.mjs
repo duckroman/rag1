@@ -6,6 +6,7 @@ const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['react-pdf', 'pdfjs-dist'],
   webpack: (config, { isServer }) => {
     config.resolve.alias['@/'] = path.join(__dirname, 'src/');
     return config;
