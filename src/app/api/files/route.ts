@@ -31,11 +31,11 @@ export async function GET() {
 
     const files = response.data.files || [];
     const appFiles = files.map(mapGoogleFileToAppFile);
-    return NextResponse.json(appFiles);
+    return NextResponse.json({ files: appFiles });
 
   } catch (error: any) {
     const errorDetails = error.response?.data?.error || { message: error.message };
-    return new NextResponse(JSON.stringify({ error: 'Failed to fetch files', details: errorDetails.message || JSON.stringify(errorDetails) }), { status: 500 });
+    return new NextResponse(JSON.stringify({ error: 'Failed to fetch files', details: errorDetails.message || JSON.stringify(errorDetails), files: [] }), { status: 500 });
   }
 }
 

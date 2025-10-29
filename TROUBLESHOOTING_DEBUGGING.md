@@ -72,6 +72,30 @@ import { useState, useEffect } from 'react';
 
 This ensures that the component is rendered on the client side, allowing the use of React Hooks.
 
+### 1.5. PDF.js Worker Version Mismatch
+
+**Error Message:**
+```
+Warning: UnknownErrorException: The API version "X.Y.Z" does not match the Worker version "A.B.C".
+Error loading document: – "The API version \"X.Y.Z\" does not match the Worker version \"A.B.C\"."
+```
+
+**Cause:**
+This error occurs when the version of the PDF.js library used in your application (API version) does not match the version of the `pdf.worker.min.mjs` file (Worker version). This can happen due to:
+1.  Incorrectly configured `workerSrc` path, leading to the browser loading a different or default worker.
+2.  Outdated or mismatched `pdf.worker.min.mjs` file in your `public` directory compared to the `react-pdf` (or similar) library version.
+3.  Incorrect filename or extension for the worker file in the `public` directory (e.g., `pdf.worker.min.js` instead of `pdf.worker.min.mjs`).
+
+**Solution:**
+To ensure the PDF.js worker version always matches the API version used by `react-pdf`, it's recommended to dynamically load the worker from a CDN that provides the correct version.
+
+**Example Fix (in `src/app/components/FilePreview.tsx`):**
+```typescript
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+```
+
+This approach uses `unpkg.com` to fetch the worker file that corresponds to the `pdfjs.version` currently being used by `react-pdf`, effectively resolving version mismatch issues. This also removes the need to manually manage the `pdf.worker.min.mjs` file in your `public` directory.
+
 ## 2. Debugging Techniques
 
 ### 2.1. Browser Developer Tools
