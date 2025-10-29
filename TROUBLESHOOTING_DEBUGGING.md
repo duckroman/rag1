@@ -124,6 +124,25 @@ export interface AppFile {
 
 This ensures that the `AppFile` interface has a unified definition, resolving the type mismatch error.
 
+### 1.7. PM2 Process Not Found
+
+**Error Message:**
+```
+[PM2][ERROR] Process or Namespace rag-app not found
+```
+
+**Cause:**
+This error occurs when PM2 is instructed to `restart` an application with a specific name (e.g., `rag-app`), but it cannot find an active process or a defined application with that name in its registry. This typically happens if:
+1.  The application was never started with PM2 under that exact name.
+2.  PM2's internal state or configuration has been reset or cleared.
+3.  The application name in the `pm2 restart` command does not match the name used when the application was originally started (e.g., in a PM2 ecosystem file).
+
+**Solution:**
+1.  **Check PM2 Status:** Run `pm2 list` to see all currently managed processes and their names. Verify if `rag-app` is listed.
+2.  **Start if not running:** If `rag-app` is not listed, you need to start it first. Use `pm2 start <your-app-entry-file> --name rag-app` (e.g., `pm2 start npm --name rag-app -- run start` for a Next.js app). If you have a PM2 ecosystem file (e.g., `ecosystem.config.js`), use `pm2 start ecosystem.config.js`.
+3.  **Correct Name:** Ensure the name in your `pm2 restart` command exactly matches the name used when starting the application.
+4.  **Save PM2 State:** After starting your application, run `pm2 save` to persist the process list across reboots.
+
 ## 2. Debugging Techniques
 
 ### 2.1. Browser Developer Tools
