@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleDriveClient } from '@/lib/google-drive';
 
 const GOOGLE_DOCS_MIME_TYPES = {
@@ -9,13 +9,11 @@ const GOOGLE_DOCS_MIME_TYPES = {
 };
 
 // GET handler for fetching file content for preview
-export async function GET(request: Request, context: { params: { fileId: string } }) {
-  // WORKAROUND: Manually parse fileId from the URL.
-  const urlParts = request.url.split('/');
-  const fileId = urlParts[urlParts.length - 1];
+export async function GET(request: NextRequest, context: { params: { fileId: string } }) {
+  const { fileId } = context.params;
 
-  if (!fileId || fileId === 'files') {
-    return new NextResponse(JSON.stringify({ error: 'File ID could not be parsed from URL.' }), { status: 400 });
+  if (!fileId) {
+    return NextResponse.json({ error: 'File ID is required' }, { status: 400 });
   }
 
   try {
@@ -67,25 +65,24 @@ export async function GET(request: Request, context: { params: { fileId: string 
     });
 
   } catch (error: any) {
-    const errorDetails = error.response?.data?.error || { message: error.message };
-    return new NextResponse(
-      JSON.stringify({ 
+    console.error('Failed to fetch file from Google Drive:', error);
+    const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error';
+    return NextResponse.json(
+      { 
         error: 'Failed to fetch file from Google Drive', 
-        details: errorDetails.message || JSON.stringify(errorDetails) 
-      }), 
+        details: errorMessage
+      }, 
       { status: error.response?.status || 500 }
     );
   }
 }
 
 // DELETE handler for deleting a file
-export async function DELETE(request: Request, context: { params: { fileId: string } }) {
-  // Use the same workaround to get the fileId
-  const urlParts = request.url.split('/');
-  const fileId = urlParts[urlParts.length - 1];
+export async function DELETE(request: NextRequest, context: { params: { fileId: string } }) {
+  const { fileId } = context.params;
 
   if (!fileId) {
-    return new NextResponse(JSON.stringify({ error: 'File ID is required' }), { status: 400 });
+    return NextResponse.json({ error: 'File ID is required' }, { status: 400 });
   }
 
   try {
@@ -93,12 +90,13 @@ export async function DELETE(request: Request, context: { params: { fileId: stri
     await drive.files.delete({ fileId });
     return new NextResponse(null, { status: 204 }); // 204 No Content on success
   } catch (error: any) {
-    const errorDetails = error.response?.data?.error || { message: error.message };
-    return new NextResponse(
-      JSON.stringify({ 
+    console.error('Failed to delete file from Google Drive:', error);
+    const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error';
+    return NextResponse.json(
+      { 
         error: 'Failed to delete file from Google Drive', 
-        details: errorDetails.message || JSON.stringify(errorDetails) 
-      }), 
+        details: errorMessage
+      }, 
       { status: error.response?.status || 500 }
     );
   }
