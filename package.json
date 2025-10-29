@@ -19,6 +19,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-dropzone": "^14.3.8",
+    "typescript": "^5",
     "react-pdf": "^10.2.0"
   },
   "devDependencies": {
@@ -27,6 +28,5 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
-    "typescript": "^5"
   }
 }
