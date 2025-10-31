@@ -7,7 +7,7 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import type { AppFile } from '../page';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface FilePreviewProps {
   file: AppFile | null;
@@ -59,24 +59,26 @@ const FilePreview = ({ file }: FilePreviewProps) => {
 
   return (
     <Box ref={containerRef} sx={{ height: '100%', overflowY: 'auto', p: 1 }}>
-      <Document
-        file={fileUrl}
-        onLoadSuccess={onDocumentLoadSuccess}
-        onLoadError={(error) => {
-          console.error('Error loading document:', error.message);
-        }}
-        loading={<CircularProgress />}
-        error={<Alert severity="error">No se pudo cargar la previsualización del PDF.</Alert>}
-      >
-        {Array.from(new Array(numPages), (el, index) => (
-          <Page
-            key={`page_${index + 1}`}
-            pageNumber={index + 1}
-            renderTextLayer={false}
-            width={containerWidth} // Make page responsive
-          />
-        ))}
-      </Document>
+      {containerWidth > 0 && (
+        <Document
+          file={fileUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={(error) => {
+            console.error('Error loading document:', error.message);
+          }}
+          loading={<CircularProgress />}
+          error={<Alert severity="error">No se pudo cargar la previsualización del PDF.</Alert>}
+        >
+          {Array.from(new Array(numPages), (el, index) => (
+            <Page
+              key={`page_${index + 1}`}
+              pageNumber={index + 1}
+              renderTextLayer={false}
+              width={containerWidth} // Make page responsive
+            />
+          ))}
+        </Document>
+      )}
     </Box>
   );
 };
