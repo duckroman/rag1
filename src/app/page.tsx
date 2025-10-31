@@ -109,13 +109,94 @@ export default function Home() {
   };
 
   return (
-    <>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, pb: '300px' }}> {/* Added padding-bottom to prevent overlap with fixed chat */}
-        <Box sx={{ textAlign: 'center', mb: 5 }}>
-          <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Container
+      maxWidth="xl"
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' }, // Responsive layout
+        height: '100vh',
+        p: 2,
+        gap: 2,
+        pb: { xs: '250px', md: 2 }, // Space for floating chat on mobile
+        overflowY: { xs: 'auto', md: 'hidden' },
+      }}
+    >
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ position: 'fixed', top: 20, right: 20, zIndex: 9999 }}
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+
+      {/* Sidebar */}
+      <Box
+        sx={{
+          width: { xs: '100%', md: '30%' }, // Responsive width
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative', // For positioning the copyright
+          }}
+        >
+          <Typography variant="h6" component="h2" gutterBottom>
+            Mis Archivos
+          </Typography>
+          <FileDropzone onDrop={handleDrop} isUploading={isUploading} />
+          <Box sx={{ flexGrow: 1, overflowY: 'auto', mt: 2 }}>
+            {loadingFiles ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <FileList
+                files={files}
+                onDelete={handleDelete}
+                onSelect={handleSelect}
+                selectedFileId={selectedFile?.id || null}
+              />
+            )}
+          </Box>
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              bottom: 8,
+              right: 8,
+              color: 'text.disabled',
+            }}
+          >
+            JRC 2025 &copy;
+          </Typography>
+        </Paper>
+      </Box>
+
+      {/* Main Content */}
+      <Box
+        sx={{
+          width: { xs: '100%', md: '70%' }, // Responsive width
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
             Chatea Con Tus Documentos
           </Typography>
-          <Typography variant="h6" color="text.secondary">
+          <Typography variant="subtitle1" color="text.secondary">
             Una nueva forma de interactuar con tu información.
           </Typography>
           <Typography variant="caption" color="text.disabled" sx={{ mt: 1 }}>
@@ -123,67 +204,61 @@ export default function Home() {
           </Typography>
         </Box>
 
-        {error && <Alert severity="error" sx={{ mb: 2, position: 'fixed', top: 20, right: 20, zIndex: 9999 }} onClose={() => setError(null)}>{error}</Alert>}
-
-        <Paper elevation={3} sx={{ p: 4, mb: 5, borderRadius: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 500, mb: 0 }}>
-              Mis Archivos
-            </Typography>
-            <IconButton onClick={() => setIsFileSectionExpanded(!isFileSectionExpanded)} size="small">
-              {isFileSectionExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
-          </Box>
-          <Collapse in={isFileSectionExpanded}>
-            <FileDropzone onDrop={handleDrop} isUploading={isUploading} />
-            {loadingFiles ? <CircularProgress sx={{ mt: 4 }} /> : <FileList files={files} onDelete={handleDelete} onSelect={handleSelect} selectedFileId={selectedFile?.id || null} />}
-          </Collapse>
-        </Paper>
-
-        {selectedFile && (
-          <Paper elevation={3} sx={{ p: 4, borderRadius: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 500, mb: 0 }}>
+        {/* File Preview */}
+        <Paper
+          elevation={3}
+          sx={{
+            borderRadius: 2,
+            flexGrow: 1,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            height: { xs: '75vh', md: 'auto' }, // Responsive height
+          }}
+        >
+          {selectedFile ? (
+            <>
+              <Typography variant="h6" sx={{ p: 2, borderBottom: '1px solid #ddd' }}>
                 Vista Previa: {selectedFile.name}
               </Typography>
-              <IconButton onClick={() => setIsPreviewSectionExpanded(!isPreviewSectionExpanded)} size="small">
-                {isPreviewSectionExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-            </Box>
-            <Collapse in={isPreviewSectionExpanded}>
-              <Box sx={{ height: '70vh' }}>
+              <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
                 <FilePreview file={selectedFile} />
               </Box>
-            </Collapse>
-          </Paper>
-        )}
-      </Container>
+            </>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+              }}
+            >
+              <Typography>Selecciona un archivo para previsualizarlo</Typography>
+            </Box>
+          )}
+        </Paper>
 
-      {/* Always visible and fixed Chat component */}
-      <Container maxWidth="lg" sx={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1300,
-        display: 'flex',
-        justifyContent: 'center',
-        pointerEvents: 'none', // Allows interaction with elements behind it
-      }}>
-        <Paper elevation={8} sx={{
-          width: '100%', // Take full width of the container
-          height: 300, // Fixed height for the chat section
-          borderRadius: '16px 16px 0 0', // Rounded top corners
-          display: 'flex',
-          flexDirection: 'column',
-          pointerEvents: 'auto', // Re-enable interaction for the chat itself
-        }}>
-          {/* The chat title and message count are now handled within the Chat component */}
-          <Box sx={{ flexGrow: 1, height: '100%', overflow: 'hidden' }}>
+        {/* Chat - Floating on mobile, fixed at bottom on desktop */}
+        <Paper
+          elevation={8}
+          sx={{
+            borderRadius: 2,
+            flexShrink: 0,
+            height: { xs: 250, md: 200 }, // Responsive height
+            position: { xs: 'fixed', md: 'relative' }, // Floating on mobile
+            bottom: { xs: 0, md: 'auto' },
+            left: { xs: 0, md: 'auto' },
+            right: { xs: 0, md: 'auto' },
+            width: { xs: '100%', md: 'auto' },
+            zIndex: 1300,
+          }}
+        >
+          <Box sx={{ height: '100%', overflow: 'hidden' }}>
             <Chat />
           </Box>
         </Paper>
-      </Container>
-    </>
+      </Box>
+    </Container>
   );
 }

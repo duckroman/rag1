@@ -26,11 +26,6 @@ export default function RootLayout({
           <main style={{ flex: 1 }}>
             {children}
           </main>
-          <footer style={{ padding: '1rem', marginTop: 'auto', textAlign: 'right' }}>
-            <p>
-              &copy; JRC 2025
-            </p>
-          </footer>
         </ThemeRegistry>
       </body>
     </html>
