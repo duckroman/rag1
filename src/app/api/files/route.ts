@@ -47,7 +47,9 @@ export async function GET() {
   try {
     const drive = getGoogleDriveClient();
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-    if (!folderId) throw new Error('GOOGLE_DRIVE_FOLDER_ID is not set');
+    if (!folderId) {
+      throw new Error('GOOGLE_DRIVE_FOLDER_ID environment variable is not set');
+    }
 
     const response = await drive.files.list({
       q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false`,
@@ -60,8 +62,17 @@ export async function GET() {
     return NextResponse.json({ files: appFiles });
 
   } catch (error: any) {
-    const errorDetails = error.response?.data?.error || { message: error.message };
-    return new NextResponse(JSON.stringify({ error: 'Failed to fetch files', details: errorDetails.message || JSON.stringify(errorDetails), files: [] }), { status: 500 });
+    console.error('Error in GET /api/files:', error);
+    const message = error.errors?.[0]?.message || error.message || 'An unknown error occurred.';
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch files from Google Drive.',
+        details: message,
+        files: []
+      }, 
+      { status: 500 }
+    );
   }
 }
 
@@ -101,7 +112,7 @@ export async function POST(request: Request) {
       // N8N Webhook
       if (process.env.N8N_WEBHOOK_DRIVE_URL) {
         try {
-          await fetch(process.env.N8N_WEBHOOK_DRIVE_URL, {
+          const webhookResponse = await fetch(process.env.N8N_WEBHOOK_DRIVE_URL, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -114,6 +125,10 @@ export async function POST(request: Request) {
               },
             }),
           });
+          if (!webhookResponse.ok) {
+            const errorText = await webhookResponse.text();
+            console.error(`N8N webhook failed with status ${webhookResponse.status}:`, errorText);
+          }
         } catch (webhookError) {
           console.error('Failed to send webhook for file upload:', webhookError);
           // Non-blocking error
@@ -124,7 +139,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, uploadedFiles });
 
   } catch (error: any) {
-    const errorDetails = error.response?.data?.error || { message: error.message };
-    return new NextResponse(JSON.stringify({ error: 'Failed to upload files', details: errorDetails.message || JSON.stringify(errorDetails) }), { status: 500 });
+    console.error('Error in POST /api/files:', error);
+    const message = error.errors?.[0]?.message || error.message || 'An unknown error occurred.';
+    return NextResponse.json(
+        { error: 'Failed to upload files.', details: message },
+        { status: 500 }
+    );
   }
 }
