@@ -10,7 +10,11 @@ interface Message {
   content: string;
 }
 
-export default function Chat() {
+interface ChatProps {
+  selectedFileName?: string | null;
+}
+
+export default function Chat({ selectedFileName }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +45,10 @@ export default function Chat() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ 
+          message: input, 
+          fileName: selectedFileName 
+        }),
       });
 
       if (!response.ok || !response.body) {

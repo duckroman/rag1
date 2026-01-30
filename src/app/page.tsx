@@ -255,7 +255,7 @@ export default function Home() {
           }}
         >
           <Box sx={{ height: '100%', overflow: 'hidden' }}>
-            <Chat />
+            <Chat selectedFileName={selectedFile?.name} />
           </Box>
         </Paper>
       </Box>

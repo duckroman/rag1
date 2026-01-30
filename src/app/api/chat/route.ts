@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { message } = await request.json();
+    const { message, fileName } = await request.json();
 
     if (!message) {
       return new NextResponse(JSON.stringify({ error: 'Message is required' }), { status: 400 });
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, fileName }),
     });
 
     if (!n8nResponse.ok) {

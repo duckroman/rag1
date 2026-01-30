@@ -143,6 +143,61 @@ Este error ocurre cuando se le indica a PM2 que `reinicie` una aplicación con u
 3.  **Nombre Correcto:** Asegúrese de que el nombre en su comando `pm2 restart` coincida exactamente con el nombre utilizado al iniciar la aplicación.
 4.  **Guardar el Estado de PM2:** Después de iniciar su aplicación, ejecute `pm2 save` para conservar la lista de procesos después de los reinicios.
 
+### 1.8. Caducidad del Refresh Token de Google (7 días)
+
+**Síntoma:**
+La conexión con Google Drive o los servicios de Google falla sistemáticamente cada 7 días, requiriendo generar un nuevo token.
+
+**Causa:**
+Esto ocurre si su proyecto en Google Cloud Platform tiene el "Estado de publicación" (Publishing status) configurado como **"Testing"** (Prueba). En este modo, Google limita la vida útil de los refresh tokens a 7 días por seguridad.
+
+**Solución:**
+Para obtener un token que no caduque (o que dure indefinidamente hasta que sea revocado):
+1.  Vaya a la Consola de Google Cloud > **APIs & Services** > **OAuth consent screen**.
+2.  Haga clic en el botón **"PUBLISH APP"** (Publicar aplicación) para cambiar el estado a **"Production"**.
+3.  No es necesario completar el proceso de verificación de la aplicación si es para uso personal, pero el cambio de estado eliminará la restricción de 7 días.
+4.  Genere un nuevo `GOOGLE_REFRESH_TOKEN` y actualice su archivo `.env.local`. Este nuevo token será persistente.
+
+### 1.9. Error 403: Billing Disabled (aiplatform.googleapis.com)
+
+**Mensaje de Error:**
+```json
+{
+  "error": {
+    "code": 403,
+    "message": "This API method requires billing to be enabled...",
+    "reason": "BILLING_DISABLED"
+  }
+}
+```
+
+**Causa:**
+Estás intentando utilizar un servicio de Google Cloud (como Vertex AI o Gemini API a través de `aiplatform.googleapis.com`) que requiere que el proyecto tenga una cuenta de facturación asociada para funcionar, incluso si el uso está dentro de la capa gratuita.
+
+**Solución:**
+1.  Vaya a la URL proporcionada en el mensaje de error (generalmente `https://console.developers.google.com/billing/enable?project=TU_PROJECT_ID`).
+2.  Asocie una cuenta de facturación (tarjeta de crédito o cuenta bancaria) a su proyecto de Google Cloud.
+3.  Espere unos minutos a que el cambio se propague en los sistemas de Google antes de reintentar la operación.
+
+### 1.10. El Chatbot responde con información de archivos eliminados o no seleccionados
+
+**Síntoma:**
+El chatbot utiliza contexto de archivos que ya no existen en la carpeta o mezcla información de varios archivos cuando solo debería responder sobre el que se está previsualizando.
+
+**Causa:**
+Lo que está sucediendo es que tu Base de Datos Vectorial (donde n8n guarda la información "leída" de los archivos) sigue teniendo guardados los fragmentos (chunks) de los archivos antiguos, y cuando haces una pregunta, el chatbot busca en todo lo que tiene guardado, sin distinguir si el archivo sigue en Drive o cuál estás mirando.
+
+**Solución:**
+Tu suposición de "correr el flujo nuevamente" es una solución posible pero muy ineficiente y lenta (tardarías mucho cada vez que haces clic en un archivo).
+
+La solución correcta y profesional es implementar **Filtros de Metadatos (Metadata Filtering)**.
+
+**Pasos para solucionar esto:**
+1.  **No re-proceses el archivo:** El archivo se debe procesar (chunking) una sola vez al subirlo. Al hacerlo, asegúrate de que n8n guarde el `fileName` o `fileId` como metadato en cada vector.
+2.  **Modifica el Frontend:** Cuando el usuario selecciona un archivo para previsualizar, tu chat debe enviar ese `fileName` específico a n8n junto con la pregunta.
+3.  **Modifica el Flujo de n8n (Retrieval):** En el nodo que busca la información (generalmente "Vector Store Retriever" o similar), debes agregar una opción de Metadata Filter.
+    *   Le dirás: "Busca información relevante para esta pregunta, PERO solo dentro de los vectores donde `fileName` sea igual al archivo que estoy viendo ahora".
+
 ## 2. Técnicas de Depuración
 
 ### 2.1. Herramientas de Desarrollador del Navegador
