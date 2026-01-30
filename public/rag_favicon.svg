@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Document Background -->
+  <rect x="10" y="6" width="44" height="52" rx="4" fill="#ffffff" stroke="url(#grad1)" stroke-width="4"/>
+  
+  <!-- Text Lines -->
+  <rect x="18" y="16" width="28" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="18" y="24" width="28" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="18" y="32" width="20" height="4" rx="2" fill="#E2E8F0"/>
+
+  <!-- Chat Bubble / AI Node -->
+  <circle cx="48" cy="48" r="14" fill="url(#grad1)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Sparkles/Dots inside bubble -->
+  <circle cx="48" cy="48" r="2" fill="#ffffff"/>
+  <circle cx="43" cy="45" r="1.5" fill="#ffffff" opacity="0.8"/>
+  <circle cx="53" cy="45" r="1.5" fill="#ffffff" opacity="0.8"/>
+  <circle cx="48" cy="54" r="1.5" fill="#ffffff" opacity="0.8"/>
+</svg>

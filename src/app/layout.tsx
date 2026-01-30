@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "Upload documents and chat with them.",
   icons: [{
     rel: 'icon',
-    url: '/rag_favicon.png',
+    url: '/rag_favicon.svg',
   }],
 };
 

@@ -196,7 +196,44 @@ La solución correcta y profesional es implementar **Filtros de Metadatos (Metad
 1.  **No re-proceses el archivo:** El archivo se debe procesar (chunking) una sola vez al subirlo. Al hacerlo, asegúrate de que n8n guarde el `fileName` o `fileId` como metadato en cada vector.
 2.  **Modifica el Frontend:** Cuando el usuario selecciona un archivo para previsualizar, tu chat debe enviar ese `fileName` específico a n8n junto con la pregunta.
 3.  **Modifica el Flujo de n8n (Retrieval):** En el nodo que busca la información (generalmente "Vector Store Retriever" o similar), debes agregar una opción de Metadata Filter.
-    *   Le dirás: "Busca información relevante para esta pregunta, PERO solo dentro de los vectores donde `fileName` sea igual al archivo que estoy viendo ahora".
+    *   Ejemplo: `file_name` Igual a `{{ $json.body.fileName }}`.
+
+### 1.11. El nodo devuelve 0 resultados al aplicar el filtro
+
+**Síntoma:**
+Después de configurar el "Metadata Filter" en n8n como se indicó, el nodo de búsqueda ("Get top chunks") se ejecuta correctamente (se pone en verde) pero la salida está vacía (`[]` o `No items`).
+
+**Causa:**
+El filtro está funcionando "demasiado bien": está bloqueando todo porque **ningún** vector en tu base de datos coincide *exactamente* con el criterio.
+Esto suele pasar por:
+1.  **El archivo no está indexado:** Subiste el archivo a Drive, pero tu flujo de "Ingesta" (el que guarda los vectores) falló o no se ejecutó para este archivo específico.
+2.  **Discrepancia en el nombre:** El archivo se guardó en la base de datos con un nombre ligeramente diferente (ej. "bitcoin_whitepaper.pdf" vs "Bitcoin whitepaper.pdf") o sin la extensión.
+3.  **Falta el metadato:** El flujo de ingesta guardó el texto del archivo, pero olvidó guardar el `file_name` en los metadatos.
+
+**Solución:**
+Debes verificar qué datos tiene *realmente* tu base de datos para ese archivo.
+1.  **Depuración Temporal:** En el nodo "Get top chunks", **desactiva temporalmente el Metadata Filter**.
+2.  **Búsqueda Manual:** En el campo de "Prompt" o "Query" del nodo, escribe una palabra clave única de ese documento (ej. "Satoshi" para el whitepaper de Bitcoin).
+3.  **Ejecutar y Revisar:** Ejecuta el nodo. Si aparecen resultados, mira la pestaña **JSON** de la salida y expande `metadata`.
+4.  **Corregir:**
+    *   Fíjate cómo está escrito el nombre del archivo en la clave `file_name` (o si la clave se llama diferente, ej. `filename`).
+    *   Ajusta tu filtro o tu flujo de subida (Ingesta) para que coincidan exactamente.
+
+### 1.12. El chatbot solo responde con información de la primera página
+
+**Síntoma:**
+El chatbot responde correctamente, pero ignora totalmente el contenido que está en las páginas 2, 3, hasta la 9. Solo parece "leer" el principio del documento.
+
+**Causa:**
+Esto suele ser un problema de **Límite de Recuperación (Top K)** o de **Tamaño de Contexto**.
+1.  **Límite bajo:** El nodo "Get top chunks" tiene configurado un límite de resultados (Limit) muy bajo (por ejemplo, 1 o 2). Si cada chunk corresponde aproximadamente a media página, solo estás recuperando la primera página.
+2.  **Chunking por página:** Si tu estrategia de división (chunking) fue "1 chunk = 1 página", y pides 1 resultado, solo tendrás 1 página.
+3.  **Ventana de Contexto:** Si recuperas muchos chunks pero son muy grandes, el LLM puede estar recortando el texto porque excede su límite de tokens de entrada.
+
+**Solución:**
+1.  **Aumentar el límite:** Ve al nodo **"Get top chunks"** (Vector Store Retriever). Busca el campo **"Limit"** o **"Return X results"**. Aumentalo (por ejemplo, a **6** u **8**).
+2.  **Verificar la salida:** Ejecuta el nodo y mira la pestaña JSON. Deberías ver varios objetos en la lista. Revisa sus campos `pageContent` o `metadata.loc.pageNumber` para confirmar que vienen de diferentes partes del documento.
+3.  **Re-ranking (Avanzado):** Si aumentar el límite mete mucha "basura", considera agregar un paso de "Re-ranking" después de la búsqueda para ordenar los resultados por relevancia real antes de pasarlos al LLM.
 
 ## 2. Técnicas de Depuración
 
